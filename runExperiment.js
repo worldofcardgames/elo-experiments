@@ -225,8 +225,13 @@ var Game = function() {
 var getOptions = function() {
 	var options = [];
 	var nPlayers = 4;
-	var winRatios = [0.05, 0.70, 0.15, 0.1];
+	var winRatios = [0, 0, 0, 1];
 	var names = ["Frank", "Mary", "Jim", "Susan"];
+	// In this example, player 0 starts at 1600 Elo, while the rest start at 1400.
+	// However, Frank never wins, and only Susan does.
+	var eloInitial = [1600, 1400, 1400, 1400];
+	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios, eloInitial : eloInitial});
+	winRatios = [0.05, 0.70, 0.15, 0.1];
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios});
 	winRatios = [0.25, 0.25, 0.25, 0.25];
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios});
@@ -292,8 +297,12 @@ var runExperiment = function(option, creditOneWinner) {
 	var nPlayers = option.nPlayers;
 	var winRatios = option.winRatios;
 	var names = option.names;
+	var eloInitial = [1500, 1500, 1500, 1500];
+	if (option.eloInitial) {
+		eloInitial = option.eloInitial;
+	}
 	for (var i = 0; i < nPlayers; i++) {
-		game.addPlayer(new Player(i, winRatios[i], 1500));
+		game.addPlayer(new Player(i, winRatios[i], eloInitial[i]));
 		game.players[i].name = names[i];
 	}
 	if (DEBUG) console.log("Initial players for experiment:");

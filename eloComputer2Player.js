@@ -31,7 +31,6 @@ var Computer = function() {
 		var newRank = oldRating + K*(actual - expected);
 		return Math.round(newRank);
 	};
-
 };
 
 exports.Computer = Computer;
