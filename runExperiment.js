@@ -231,6 +231,8 @@ var getOptions = function() {
 	// However, Frank never wins, and only Susan does.
 	var eloInitial = [1600, 1400, 1400, 1400];
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios, eloInitial : eloInitial});
+	winRatios = [0.0, 0.333, 0.333, 0.334];
+	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios});
 	winRatios = [0.05, 0.70, 0.15, 0.1];
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios});
 	winRatios = [0.25, 0.25, 0.25, 0.25];
