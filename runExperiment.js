@@ -29,6 +29,22 @@ var Game = function() {
 	this.players = [];
 	this.totRatio = 0;
 	this.creditWinnerOnly = false;
+	this.team = false;
+	/**
+	 * Shuffling players only matters for team games.
+	 */
+	this.shufflePlayers = false;
+
+	Game.prototype.shuffle = function(array) {
+		// see https://bost.ocks.org/mike/shuffle/compare.html
+		var m = array.length, t, i;
+		while (m) {
+			i = Math.floor(Math.random() * m--);
+			t = array[m];
+			array[m] = array[i];
+			array[i] = t;
+		}
+	};
 
 	/**
 	 * If b is true, only one winner allowed in a game, which means that
@@ -38,6 +54,23 @@ var Game = function() {
 	 */
 	Game.prototype.setCreditWinnerOnly = function(b) {
 		this.creditWinnerOnly = b; // true of false.
+	};
+
+	/**
+	 * If b is true, this is a team game. In team games, the Elo rating of
+	 * each team member is computed as if each one was in a match against each
+	 * member of the opposing team.
+	 */
+	Game.prototype.setTeamGame = function(b) {
+		this.team = b; // true of false.
+	};
+
+	/**
+	 * If b is true, players will be reassigned to teams randomly.
+	 * This only affects the end result in team games.
+	 */
+	Game.prototype.setShufflePlayers = function(b) {
+		this.shufflePlayers = b; // true of false.
 	};
 
 	/**
@@ -94,11 +127,29 @@ var Game = function() {
 	 * game
 	 */
 	Game.prototype.getPlacings = function() {
-		var nPlayers = this.players.length;
+		var p;
 		var placings = [];
+		var winner;
+		if (this.team &&
+			this.players.some(function(el, i) {
+				if (el.winRatio < 0.000001) {
+					// assume only 1 player has 0 probability of winning
+					p = i;
+					return true;
+				}
+				return false;
+			})) {
+			// If this is a team game, and one team member has 0 chance of
+			// winning the other team wins by fiat.
+			winner = this.getOpponentPlayerNumber(p);
+			var winner2 = this.getTeammatePlayerNumber(winner);
+			placings = [winner, winner2, p, this.getTeammatePlayerNumber(p)];
+			return placings;
+		}
+		var nPlayers = this.players.length;
 		var arr = this.players.slice();
 		for (var i = 0; i < nPlayers; i++) {
-			var winner = this.getWinner(arr);
+			winner = this.getWinner(arr);
 			placings.push(arr[winner].playerNumber);
 			// remove the winner from the array and recompute
 			arr.splice(winner, 1);
@@ -138,6 +189,35 @@ var Game = function() {
 	};
 
 	/**
+	 * Returns the player number of the input player's teammate.
+	 * Assumes a team game, and 4 total players.
+	 * @param {Integer} playerNumber, 0..3
+	 * @return {Integer} teammate's player number, e.g. 0 if input was 2
+	 */
+	Game.prototype.getTeammatePlayerNumber = function(playerNumber) {
+		if (playerNumber > 3 || playerNumber < 0) throw new Error("Player out of bounds " + playerNumber);
+		if (playerNumber < 2) {
+			return playerNumber + 2;
+		} else {
+			return playerNumber - 2;
+		}
+	};
+
+	/**
+	 * Returns the player number of the opponent player's teammate.
+	 * Assumes a team game, and 4 total players.
+	 * @param {Integer} playerNumber, 0..3
+	 * @return {Integer} teammate's player number, e.g. 0 if input was 2
+	 */
+	Game.prototype.getOpponentPlayerNumber = function(playerNumber, nPlayers) {
+		if (playerNumber > 3 || playerNumber < 0) throw new Error("Player out of bounds " + playerNumber);
+		if (playerNumber < 2) {
+			return playerNumber + 1;
+		} else {
+			return playerNumber - 1;
+		}
+	};
+	/**
 	 * Returns the Elo rating for a single player against other players given
 	 * the input placings array, which determines who came in 1st, 2nd, etc
 	 * @param {Object} the Player whose Elo rating is being computed
@@ -153,8 +233,22 @@ var Game = function() {
 		var myExpectedScore = 0;
 		var myEloRating = player.eloRating;
 		var myPlayerNumber = player.playerNumber;
+		var teammatePlayerNumber = game.getTeammatePlayerNumber(player.playerNumber);
 		// For example if myPlayerNumber is 3, and I came in 1st, myplace is 0
 		var myplace = placings.indexOf(myPlayerNumber);
+		if (game.team) {
+			players.forEach(function(p, i) {
+				var theirPlayerNumber = p.playerNumber;
+				if (myPlayerNumber !== theirPlayerNumber &&
+					teammatePlayerNumber !== theirPlayerNumber) {
+					// Player is not me, not teammate. Assume a 4-player game.
+					var theirEloRating = p.eloRating;
+					var theirPlace = placings.indexOf(p.playerNumber);
+					myExpectedScore += game.computeEloExpectation(myEloRating, theirEloRating);
+					myActualScore += game.getActualScoreCreditWinnerOnly(myplace, theirPlace);
+				}
+			});
+		} else {
 		players.forEach(function(p, i) {
 			var theirPlayerNumber = p.playerNumber;
 			if (myPlayerNumber !== theirPlayerNumber) {
@@ -168,6 +262,8 @@ var Game = function() {
 				}
 			}
 		});
+
+		}
 		var myNewElo = game.computeNewEloRating(myEloRating, myActualScore, myExpectedScore, 30);
 		return myNewElo;
 	};
@@ -181,6 +277,16 @@ var Game = function() {
 	 */
 	Game.prototype.getActualScoreCreditWinnerOnly = function(myplace, theirPlace) {
 		var score = 0;
+		if (this.team) {
+			// Note: if myplace is 0 or 1, then I've won.
+			if (myplace === 0 || myplace === 1) {
+				score = 1;
+			} else if (theirPlace > 1) {
+				// I did not win. My team lost.
+				score = 0;
+			}
+			return score;
+		}
 		// Note: if myplace is 0, then I've won.
 		if (myplace === 0) {
 			score = 1;
@@ -230,9 +336,26 @@ var getOptions = function() {
 	// In this example, player 0 starts at 1600 Elo, while the rest start at 1400.
 	// However, Frank never wins, and only Susan does.
 	var eloInitial = [1600, 1400, 1400, 1400];
+	// Option #0
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios, eloInitial : eloInitial});
 	winRatios = [0.0, 0.333, 0.333, 0.334];
+	// Option #1
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios});
+	// This example is the same as the above, but Elo ratings will be computed
+	// as if for a team game. The teams are fixed. It is assumed that Frank
+	// and Jim never win due to Frank's incompetence.
+	// Option #2
+	winRatios = [0.0, 1/3, 1/3, 1/3];
+	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios, team : true, eloInitial : [1200, 1600, 1600, 1600]});
+
+	// Same as above, only players are randomly reassigned teams over time.
+	// Assume that the 1600 players are equally likely to win, and the 1200
+	// player will never win.
+	// Option #3
+	winRatios = [0.0, 1/3, 1/3, 1/3];
+	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios,
+		team : true, shufflePlayers : true, eloInitial : [1200, 1600, 1600, 1600]});
+
 	winRatios = [0.05, 0.70, 0.15, 0.1];
 	options.push({nPlayers : nPlayers, names : names, winRatios : winRatios});
 	winRatios = [0.25, 0.25, 0.25, 0.25];
@@ -296,6 +419,8 @@ var runExperiment = function(option, creditOneWinner) {
 	var rows = [];
 	var game = new Game();
 	game.setCreditWinnerOnly(creditOneWinner);
+	game.setTeamGame(option.team);
+	game.setShufflePlayers(option.shufflePlayers);
 	var nPlayers = option.nPlayers;
 	var winRatios = option.winRatios;
 	var names = option.names;
@@ -315,16 +440,6 @@ var runExperiment = function(option, creditOneWinner) {
 	});
 	// Just an array of zeroes
 	var counts = winRatios.map(function() { return 0; });
-	var getOtherPlayersEloRatings = function(playerNumber) {
-		var theirEloRatings = game.players.map(
-			function(p, k) {
-				return p.eloRating;
-			}).filter(function(p, k) {
-				return playerNumber !== k;
-			}
-		);
-		return theirEloRatings;
-	};
 	var assignEloRatingsAfterGame = function(newEloRatings) {
 		game.players.forEach(function(p, i) {
 			p.eloRating = newEloRatings[p.playerNumber];
@@ -357,19 +472,41 @@ var runExperiment = function(option, creditOneWinner) {
 	var year = 1900;
 	var len = game.players.length;
 	storeElo();
+	var reassignPlayerNumber = function() {
+		game.players.forEach(function(p, i) {
+			p.playerNumber = i;
+		});
+	};
 	for (i = 0; i < nGames; i++) {
-		var placings = game.getPlacings();
-		for (var j = 0; j < len; j++) {
-			var playerNum = game.players[j].playerNumber;
-			var theirEloRatings = getOtherPlayersEloRatings(playerNum);
-			var ps = placings.slice();
-			ps.splice(j, 1);
-			var newElo = game.computeElo(game.players[j], game.players, placings);
-			newEloRatings[playerNum] = Math.round(newElo);
+		var str = "	BEFORE:	";
+		var j;
+		for (j = 0; j < len; j++) {
+			str += j + ") " + game.players[j].playerNumber + " " + game.players[j].name + " " + game.players[j].eloRating + ", ";
 		}
+		if (DEBUG) console.log(str);
+		var placings = game.getPlacings();
+		str = "	AFTER: placings " + JSON.stringify(placings) + " ";
+		for (j = 0; j < len; j++) {
+			var index = placings[j];
+			var playerNum = game.players[index].playerNumber;
+			var newElo = game.computeElo(game.players[index], game.players, placings);
+			newEloRatings[playerNum] = Math.round(newElo);
+			str += placings[j] + ") placed " + j + " "  + playerNum + " " + game.players[index].name + " " + newEloRatings[playerNum] + ", ";
+		}
+		if (DEBUG) console.log(str);
 		assignEloRatingsAfterGame(newEloRatings);
 		assignNTimes(placings, game);
 		storeElo();
+		/*
+		var x = game.players.slice();
+		game.players[0] = x[3];
+		game.players[3] = x[0];
+		*/
+		if (game.shufflePlayers) {
+			game.shuffle(game.players);
+			reassignPlayerNumber();
+		}
+		if (DEBUG) console.log("New player set: " + JSON.stringify(game.players));
 	}
 	return { rows : rows, players : game.players };
 };
@@ -377,17 +514,18 @@ var runExperiment = function(option, creditOneWinner) {
 /**
  * A little test to run outside the browser.
  */
+ /*
 var test = function() {
 	var options = getOptions();
-	var option = options[5];
+	var option = options[3];
 	var result = runExperiment(option);
-	console.log(result.players);
+	//console.log(result.players);
 };
-//test();
-/*
+test();
+*/
+
 exports.Player = Player;
 
 exports.Game = Game;
 
 exports.runExperiment = runExperiment;
-*/
