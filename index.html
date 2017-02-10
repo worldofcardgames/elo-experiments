@@ -1,0 +1,98 @@
+<html>
+  <head>
+  	<!-- all code copyright Marya @ worldofcardgames.com -->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="http://worldofcardgames.com/runExperiment.js"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["motionchart"]});
+      var playerOption = 0;
+      function displayOptions() {
+	      document.getElementById("nGames").innerHTML = nGames;
+      	  var buttons = document.getElementById("buttons");
+	      var playerOptions = getOptions();
+	      playerOptions.forEach(function(opt, j) {
+	      	var str = "";
+	      	var n = opt.nPlayers;
+	      	var sep = "";
+	      	for (var i = 0; i < n; i++) {
+	      		str += sep + opt.names[i] + " - " + opt.winRatios[i];
+	      		sep = ", ";
+	      	}
+		if (opt.team) {
+			str += " TEAM GAME";
+		}
+		if (opt.shufflePlayers) {
+			str += " - PLAYERS SHUFFLED AT START OF EACH GAME";
+		}
+	      	var div = document.createElement("div");
+	      	var element = document.createElement("button");
+	      	element.setAttribute("type", "button");
+	      	element.setAttribute("value", j);
+	      	element.innerHTML = str;
+	        element.setAttribute("onclick", "setOption(" + j + ");");
+	      	buttons.appendChild(div);
+	      	div.appendChild(element);
+	      	div.appendChild(document.createElement("p"));
+		  });
+	  }
+      //google.setOnLoadCallback(drawChart);
+      google.setOnLoadCallback(displayOptions);
+      function setOption(playerOption) {
+      	document.playerOption = playerOption;
+      	drawChart();
+      }
+      function drawChart() {
+      	var options = getOptions();
+      	// if "credit one winner" is checked, then only one winner is used in
+      	// computing Elo ratings. Otherwise, the 2nd place finisher "wins" over
+      	// the 3rd and 4th place finishers in computing Elo ratings.
+      	var creditOneWinner = document.getElementById("countOneWinner").checked;
+      	var obj = runExperiment(options[document.playerOption], creditOneWinner);
+      	var html = "";
+      	var sep = "";
+      	obj.players.forEach(function(el, i) {
+      		html += sep + el.name + " - " + el.winRatio;
+      		sep = ", "
+      	});
+      	document.getElementById("skills").innerHTML = html;
+      	var rows = obj.rows;
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Player');
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Elo');
+        data.addRows(rows);
+        var chart = new google.visualization.MotionChart(document.getElementById('chart_div'));
+		var options = {};
+		/*
+		options['state'] = {"iconKeySettings":[],"stateVersion":3,"time":"notime",
+			"xAxisOption":"_NOTHING","playDuration":15,"iconType":"BUBBLE",
+			"sizeOption":"_NOTHING","xZoomedDataMin":null,"xZoomedIn":false,
+			"duration":{"multiplier":1,"timeUnit":"none"},"yZoomedDataMin":null,"xLambda":1,
+			"colorOption":"_UNIQUE_COLOR","nonSelectedAlpha":0.4,
+			"dimensions":
+			{"iconDimensions":[]},"yZoomedIn":false,"yAxisOption":"_NOTHING","yLambda":1,"yZoomedDataMax":null,"showTrails":true,"xZoomedDataMax":null};
+		*/
+		options['state'] = '{"colorOption":"_UNIQUE_COLOR", "xAxisOption":"_TIME"}';
+
+		options['width'] = 800;
+		options['height'] = 600;
+
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+  <body>
+  	Click a button to simulate a large number of games (<span id="nGames"></span>) played repeatedly between the players listed. Each player is given a specified
+  	probability of winning. The plot shows the evolution of each player's Elo rating after each game is played.
+  	<p>
+  	<div id="buttons">
+  	</div>
+  	<div id="oneWinner">
+  		<input id="countOneWinner" type="checkbox" checked=""></input> Check this box to compute Elo ratings with <strong>1 winner</strong>. Second, third, and fourth place finishers are recorded as losing to the 1st place finisher, while their matches are recorded as a draw against each other.
+  		<br>
+  		If the box is <strong>unchecked</strong>, 2nd place finishers are computed as "winning" against the 3rd and 4th place finishers. Third place finishers are computed as "winning" against 4th place finishers.
+  	</div>
+  	<div id="skills"></div>
+    <div id="chart_div" style="width: 600px; height: 300px;"></div>
+  </body>
+</html>
