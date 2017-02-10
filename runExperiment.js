@@ -523,9 +523,10 @@ var test = function() {
 };
 test();
 */
-
+/*
 exports.Player = Player;
 
 exports.Game = Game;
 
 exports.runExperiment = runExperiment;
+*/
