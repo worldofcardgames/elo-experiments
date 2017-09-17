@@ -57,7 +57,7 @@
         var eloRatingsFin = "";
       	obj.players.forEach(function(el, i) {
       		html += sep + el.name + " - " + el.winRatio;
-          eloRatingsInit += sep + el.eloRating;
+          eloRatingsInit += sep + el.eloRatingInit;
           eloRatingsFin += sep + obj.scoreAverages[i];
       		sep = ", ";
       	});
