@@ -53,8 +53,8 @@
       	var obj = runExperiment(options[document.playerOption], creditOneWinner);
       	var html = "";
       	var sep = "";
-        var eloRatingsInit = "";
-        var eloRatingsFin = "";
+        var eloRatingsInit = "Initial Elo ratings - ";
+        var eloRatingsFin = "Averaged Elo ratings over " + obj.rows.length + " games - ";
       	obj.players.forEach(function(el, i) {
       		html += sep + el.name + " - " + el.winRatio;
           eloRatingsInit += sep + " " + el.name + ": " + el.eloRatingInit;
