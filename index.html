@@ -62,6 +62,7 @@
       		sep = ", ";
       	});
       	document.getElementById("skills").innerHTML = html;
+        showEloRatings(eloRatingsInit, eloRatingsFin);
       	var rows = obj.rows;
         var data = new google.visualization.DataTable();
         data.addColumn('string', 'Player');
