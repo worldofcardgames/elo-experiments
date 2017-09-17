@@ -58,7 +58,7 @@
       	obj.players.forEach(function(el, i) {
       		html += sep + el.name + " - " + el.winRatio;
           eloRatingsInit += sep + el.eloRating;
-          eloRatingsFin += sep + scoreAverages[i];
+          eloRatingsFin += sep + obj.scoreAverages[i];
       		sep = ", ";
       	});
       	document.getElementById("skills").innerHTML = html;
