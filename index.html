@@ -4,12 +4,13 @@
     <script type="text/javascript" src="https://www.google.com/jsapi" async></script>
     <script type="text/javascript" src="https://worldofcardgames.com/runExperiment.js" async></script>
     <script type="text/javascript">
+    var runGoogle() {
       google.load("visualization", "1", {packages:["motionchart"]});
       var playerOption = 0;
       function displayOptions() {
-	      document.getElementById("nGames").innerHTML = nGames;
-      	  var buttons = document.getElementById("buttons");
-	      var playerOptions = getOptions();
+        document.getElementById("nGames").innerHTML = nGames;
+        var buttons = document.getElementById("buttons");
+        var playerOptions = getOptions();
 	      playerOptions.forEach(function(opt, j) {
 	      	var str = "";
 	      	var n = opt.nPlayers;
@@ -18,15 +19,15 @@
 	      		str += sep + opt.names[i] + " - " + opt.winRatios[i];
 	      		sep = ", ";
 	      	}
-		if (opt.team) {
-			str += " TEAM GAME";
-		}
-		if (opt.shufflePlayers) {
-			str += " - PLAYERS SHUFFLED AT START OF EACH GAME";
-		}
-    if (opt.averageScores) {
-      str += " - SCORES AVERAGED";
-    }
+      		if (opt.team) {
+      			str += " TEAM GAME";
+      		}
+      		if (opt.shufflePlayers) {
+      			str += " - PLAYERS SHUFFLED AT START OF EACH GAME";
+      		}
+          if (opt.averageScores) {
+            str += " - SCORES AVERAGED";
+          }
 	      	var div = document.createElement("div");
 	      	var element = document.createElement("button");
 	      	element.setAttribute("type", "button");
@@ -38,62 +39,53 @@
 	      	div.appendChild(document.createElement("p"));
 		  });
 	  }
-      //google.setOnLoadCallback(drawChart);
-      google.setOnLoadCallback(displayOptions);
-      function setOption(playerOption) {
-      	document.playerOption = playerOption;
-      	drawChart();
-      }
-      function drawChart() {
-      	var options = getOptions();
-      	// if "credit one winner" is checked, then only one winner is used in
-      	// computing Elo ratings. Otherwise, the 2nd place finisher "wins" over
-      	// the 3rd and 4th place finishers in computing Elo ratings.
-      	var creditOneWinner = document.getElementById("countOneWinner").checked;
-      	var obj = runExperiment(options[document.playerOption], creditOneWinner);
-      	var html = "";
-      	var sep = "";
-        var eloRatingsInit = "Initial Elo ratings - ";
-        var eloRatingsFin = "Averaged over " + obj.nGames + " games - ";
-      	obj.players.forEach(function(el, i) {
-      		html += sep + el.name + " - " + el.winRatio;
-          eloRatingsInit += sep + " " + el.name + ": " + el.eloRatingInit;
-          eloRatingsFin += sep + " " + el.name + ": " + obj.scoreAverages[i];
-      		sep = ", ";
-      	});
-      	document.getElementById("skills").innerHTML = html;
-        showEloRatings(eloRatingsInit, eloRatingsFin);
-      	var rows = obj.rows;
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', 'Player');
-        data.addColumn('date', 'Date');
-        data.addColumn('number', 'Elo');
-        data.addRows(rows);
-        var chart = new google.visualization.MotionChart(document.getElementById('chart_div'));
-		var options = {};
-		/*
-		options['state'] = {"iconKeySettings":[],"stateVersion":3,"time":"notime",
-			"xAxisOption":"_NOTHING","playDuration":15,"iconType":"BUBBLE",
-			"sizeOption":"_NOTHING","xZoomedDataMin":null,"xZoomedIn":false,
-			"duration":{"multiplier":1,"timeUnit":"none"},"yZoomedDataMin":null,"xLambda":1,
-			"colorOption":"_UNIQUE_COLOR","nonSelectedAlpha":0.4,
-			"dimensions":
-			{"iconDimensions":[]},"yZoomedIn":false,"yAxisOption":"_NOTHING","yLambda":1,"yZoomedDataMax":null,"showTrails":true,"xZoomedDataMax":null};
-		*/
-		options['state'] = '{"colorOption":"_UNIQUE_COLOR", "xAxisOption":"_TIME"}';
+    google.setOnLoadCallback(displayOptions);
+    function setOption(playerOption) {
+    	document.playerOption = playerOption;
+    	drawChart();
+    }
+    function drawChart() {
+    	var options = getOptions();
+    	// if "credit one winner" is checked, then only one winner is used in
+    	// computing Elo ratings. Otherwise, the 2nd place finisher "wins" over
+    	// the 3rd and 4th place finishers in computing Elo ratings.
+    	var creditOneWinner = document.getElementById("countOneWinner").checked;
+    	var obj = runExperiment(options[document.playerOption], creditOneWinner);
+    	var html = "";
+    	var sep = "";
+      var eloRatingsInit = "Initial Elo ratings - ";
+      var eloRatingsFin = "Averaged over " + obj.nGames + " games - ";
+    	obj.players.forEach(function(el, i) {
+    		html += sep + el.name + " - " + el.winRatio;
+        eloRatingsInit += sep + " " + el.name + ": " + el.eloRatingInit;
+        eloRatingsFin += sep + " " + el.name + ": " + obj.scoreAverages[i];
+    		sep = ", ";
+    	});
+    	document.getElementById("skills").innerHTML = html;
+      showEloRatings(eloRatingsInit, eloRatingsFin);
+    	var rows = obj.rows;
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'Player');
+      data.addColumn('date', 'Date');
+      data.addColumn('number', 'Elo');
+      data.addRows(rows);
+      var chart = new google.visualization.MotionChart(document.getElementById('chart_div'));
+  		var options = {};
+  		options['state'] = '{"colorOption":"_UNIQUE_COLOR", "xAxisOption":"_TIME"}';
 
-		options['width'] = 800;
-		options['height'] = 600;
+      options['width'] = 800;
+      options['height'] = 600;
 
-        chart.draw(data, options);
-      }
-      function showEloRatings(eloRatingsInit, eloRatingsFin) {
-        document.getElementById("eloRatingsInit").innerHTML = eloRatingsInit;
-        document.getElementById("eloRatingsFin").innerHTML = eloRatingsFin;
-      }
+      chart.draw(data, options);
+    }
+    function showEloRatings(eloRatingsInit, eloRatingsFin) {
+      document.getElementById("eloRatingsInit").innerHTML = eloRatingsInit;
+      document.getElementById("eloRatingsFin").innerHTML = eloRatingsFin;
+    }
+  }
     </script>
   </head>
-  <body>
+  <body onload="runAll();">
   	Click a button to simulate a large number of games (<span id="nGames"></span>) played repeatedly between the players listed. Each player is given a specified
   	probability of winning. The plot shows the evolution of each player's Elo rating after each game is played.
   	<p>
