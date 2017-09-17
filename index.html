@@ -24,6 +24,9 @@
 		if (opt.shufflePlayers) {
 			str += " - PLAYERS SHUFFLED AT START OF EACH GAME";
 		}
+    if (opt.averageScores) {
+      str += " - SCORES AVERAGED";
+    }
 	      	var div = document.createElement("div");
 	      	var element = document.createElement("button");
 	      	element.setAttribute("type", "button");
@@ -50,9 +53,13 @@
       	var obj = runExperiment(options[document.playerOption], creditOneWinner);
       	var html = "";
       	var sep = "";
+        var eloRatingsInit = "";
+        var eloRatingsFin = "";
       	obj.players.forEach(function(el, i) {
       		html += sep + el.name + " - " + el.winRatio;
-      		sep = ", "
+          eloRatingsInit += sep + el.eloRating;
+          eloRatingsFin += sep + scoreAverages[i];
+      		sep = ", ";
       	});
       	document.getElementById("skills").innerHTML = html;
       	var rows = obj.rows;
@@ -79,6 +86,10 @@
 
         chart.draw(data, options);
       }
+      function showEloRatings(eloRatingsInit, eloRatingsFin) {
+        document.getElementById("eloRatingsInit").innerHTML = eloRatingsInit;
+        document.getElementById("eloRatingsFin").innerHTML = eloRatingsFin;
+      }
     </script>
   </head>
   <body>
@@ -93,6 +104,8 @@
   		If the box is <strong>unchecked</strong>, 2nd place finishers are computed as "winning" against the 3rd and 4th place finishers. Third place finishers are computed as "winning" against 4th place finishers.
   	</div>
   	<div id="skills"></div>
+    <div id="eloRatingsInit"></div>
+    <div id="eloRatingsFin"></div>
     <div id="chart_div" style="width: 600px; height: 300px;"></div>
   </body>
 </html>
